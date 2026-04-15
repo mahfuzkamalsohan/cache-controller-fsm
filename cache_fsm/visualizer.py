@@ -136,6 +136,7 @@ class FSMCanvas(QWidget):
 
         transitions: dict[str, tuple[QPainterPath, QPointF, str]] = {}
 
+        # --- IDLE TO COMPARE ---
         path = QPainterPath(QPointF(idle.x() + radius * 0.98, idle.y() + 20))
         path.lineTo(compare.x() - radius * 0.98, compare.y() + 20)
         transitions["IDLE_TO_COMPARE"] = (
@@ -144,6 +145,7 @@ class FSMCanvas(QWidget):
             "Valid CPU request",
         )
 
+        # --- COMPARE TO IDLE (HIT) ---
         path = QPainterPath(QPointF(compare.x() - radius * 0.98, compare.y() - 28))
         path.lineTo(idle.x() + radius * 0.98, idle.y() - 28)
         transitions["COMPARE_TO_IDLE_HIT"] = (
@@ -152,34 +154,39 @@ class FSMCanvas(QWidget):
             "Cache hit / mark cache ready",
         )
 
-        miss_clean_start = self._edge_point(compare, allocate, radius, extra=4)
-        miss_clean_end = self._edge_point(allocate, compare, radius, extra=2)
-        path = QPainterPath(miss_clean_start)
-        path.cubicTo(
-            QPointF(miss_clean_start.x() - 90, miss_clean_start.y() + 62),
-            QPointF(miss_clean_end.x() + 84, miss_clean_end.y() - 72),
-            miss_clean_end,
-        )
+        # --- STRAIGHT PARALLEL LINES: COMPARE <-> ALLOCATE ---
+        # 1. Calculate the unit vector and the perpendicular vector for offsetting
+        dx = allocate.x() - compare.x()
+        dy = allocate.y() - compare.y()
+        dist = math.hypot(dx, dy)
+        ux, uy = dx / dist, dy / dist  # Unit vector
+        px, py = -uy, ux               # Perpendicular vector
+
+        offset = 18.0  # Distance between the two lines
+
+        # 2. COMPARE -> ALLOCATE (Shifted one way)
+        c_to_a_start = compare + QPointF(ux * radius, uy * radius) + QPointF(px * offset, py * offset)
+        c_to_a_end = allocate - QPointF(ux * radius, uy * radius) + QPointF(px * offset, py * offset)
+        path = QPainterPath(c_to_a_start)
+        path.lineTo(c_to_a_end)
         transitions["COMPARE_TO_ALLOCATE_MISS_CLEAN"] = (
             path,
-            QPointF((compare.x() + allocate.x()) * 0.5 + 24, (compare.y() + allocate.y()) * 0.5),
+            QPointF((c_to_a_start.x() + c_to_a_end.x()) * 0.5 + px * 25, (c_to_a_start.y() + c_to_a_end.y()) * 0.5 + py * 25),
             "Cache miss and\nold block is clean",
         )
 
-        alloc_ready_start = self._edge_point(allocate, compare, radius, extra=4)
-        alloc_ready_end = self._edge_point(compare, allocate, radius, extra=2)
-        path = QPainterPath(alloc_ready_start)
-        path.cubicTo(
-            QPointF(alloc_ready_start.x() + 92, alloc_ready_start.y() - 74),
-            QPointF(alloc_ready_end.x() - 94, alloc_ready_end.y() + 58),
-            alloc_ready_end,
-        )
+        # 3. ALLOCATE -> COMPARE (Shifted the other way)
+        a_to_c_start = allocate - QPointF(ux * radius, uy * radius) - QPointF(px * offset, py * offset)
+        a_to_c_end = compare + QPointF(ux * radius, uy * radius) - QPointF(px * offset, py * offset)
+        path = QPainterPath(a_to_c_start)
+        path.lineTo(a_to_c_end)
         transitions["ALLOCATE_TO_COMPARE_READY"] = (
             path,
-            QPointF((compare.x() + allocate.x()) * 0.5 - 58, (compare.y() + allocate.y()) * 0.5 - 4),
+            QPointF((a_to_c_start.x() + a_to_c_end.x()) * 0.5 - px * 25, (a_to_c_start.y() + a_to_c_end.y()) * 0.5 - py * 25),
             "Memory ready",
         )
 
+        # --- COMPARE TO WRITEBACK ---
         path = QPainterPath(QPointF(compare.x(), compare.y() + radius * 0.98))
         path.lineTo(write_back.x(), write_back.y() - radius * 0.98)
         transitions["COMPARE_TO_WRITEBACK_MISS_DIRTY"] = (
@@ -188,6 +195,7 @@ class FSMCanvas(QWidget):
             "Cache miss and\nold block is dirty",
         )
 
+        # --- WRITEBACK TO ALLOCATE ---
         path = QPainterPath(QPointF(write_back.x() - radius * 0.98, write_back.y()))
         path.lineTo(allocate.x() + radius * 0.98, allocate.y())
         transitions["WRITEBACK_TO_ALLOCATE_READY"] = (
@@ -196,31 +204,19 @@ class FSMCanvas(QWidget):
             "Memory ready",
         )
 
-        loop_start = QPointF(allocate.x() + radius * 0.40, allocate.y() + radius * 0.70)
-        path = QPainterPath(loop_start)
-        path.cubicTo(
-            QPointF(allocate.x() + radius * 1.30, allocate.y() + radius * 1.15),
-            QPointF(allocate.x() - radius * 0.20, allocate.y() + radius * 1.58),
-            QPointF(allocate.x() - radius * 0.03, allocate.y() + radius * 0.46),
-        )
-        transitions["ALLOCATE_STALL"] = (
-            path,
-            QPointF(allocate.x() + radius * 1.23, allocate.y() + radius * 1.01),
-            "Memory not ready",
-        )
-
-        loop_start = QPointF(write_back.x() + radius * 0.40, write_back.y() + radius * 0.70)
-        path = QPainterPath(loop_start)
-        path.cubicTo(
-            QPointF(write_back.x() + radius * 1.30, write_back.y() + radius * 1.15),
-            QPointF(write_back.x() - radius * 0.20, write_back.y() + radius * 1.58),
-            QPointF(write_back.x() - radius * 0.03, write_back.y() + radius * 0.46),
-        )
-        transitions["WRITEBACK_STALL"] = (
-            path,
-            QPointF(write_back.x() + radius * 1.23, write_back.y() + radius * 1.01),
-            "Memory not ready",
-        )
+        # --- STALL LOOPS (Cubic is fine here for loops) ---
+        for state, key, label in [
+            (allocate, "ALLOCATE_STALL", "Memory not ready"),
+            (write_back, "WRITEBACK_STALL", "Memory not ready")
+        ]:
+            loop_start = QPointF(state.x() + radius * 0.40, state.y() + radius * 0.70)
+            path = QPainterPath(loop_start)
+            path.cubicTo(
+                QPointF(state.x() + radius * 1.30, state.y() + radius * 1.15),
+                QPointF(state.x() - radius * 0.20, state.y() + radius * 1.58),
+                QPointF(state.x() - radius * 0.03, state.y() + radius * 0.46),
+            )
+            transitions[key] = (path, QPointF(state.x() + radius * 1.23, state.y() + radius * 1.01), label)
 
         return transitions
 
