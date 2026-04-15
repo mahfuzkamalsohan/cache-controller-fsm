@@ -406,6 +406,8 @@ class FSMCanvas(QWidget):
 
 
 class FSMVisualizerApp:
+    DETAIL_PREVIEW_MAX = 82
+
     def __init__(self) -> None:
         self.qt_app = QApplication.instance()
         if self.qt_app is None:
@@ -505,21 +507,40 @@ class FSMVisualizerApp:
         right_layout.setSpacing(10)
 
         status_group = QGroupBox("Current Step")
-        status_layout = QVBoxLayout(status_group)
-        status_layout.setSpacing(4)
-        self.cycle_label = QLabel("Cycle: 0")
-        self.state_label = QLabel("State: Idle")
-        self.transition_label = QLabel("Transition: -")
-        self.request_label = QLabel("Issued Request: -")
-        self.response_label = QLabel("Completed Response: -")
-        for item in [
-            self.cycle_label,
-            self.state_label,
-            self.transition_label,
-            self.request_label,
-            self.response_label,
-        ]:
-            status_layout.addWidget(item)
+        status_layout = QGridLayout(status_group)
+        status_layout.setHorizontalSpacing(10)
+        status_layout.setVerticalSpacing(6)
+
+        self.cycle_label = QLabel("0")
+        self.cycle_label.setObjectName("StepValueStrong")
+        self.state_label = QLabel("Idle")
+        self.state_label.setObjectName("StepValueStrong")
+        self.transition_label = QLabel("-")
+        self.transition_label.setObjectName("StepValueStrong")
+        self.request_label = QLabel("-")
+        self.request_label.setObjectName("StepValueDetail")
+        self.request_label.setWordWrap(True)
+        self.request_label.setFixedHeight(48)
+        self.response_label = QLabel("-")
+        self.response_label.setObjectName("StepValueDetail")
+        self.response_label.setWordWrap(True)
+        self.response_label.setFixedHeight(48)
+
+        self.cycle_label.setFixedHeight(28)
+        self.state_label.setFixedHeight(28)
+        self.transition_label.setFixedHeight(28)
+
+        status_layout.addWidget(QLabel("Cycle"), 0, 0)
+        status_layout.addWidget(self.cycle_label, 0, 1)
+        status_layout.addWidget(QLabel("State"), 1, 0)
+        status_layout.addWidget(self.state_label, 1, 1)
+        status_layout.addWidget(QLabel("Transition"), 2, 0)
+        status_layout.addWidget(self.transition_label, 2, 1)
+        status_layout.addWidget(QLabel("Issued Request"), 3, 0)
+        status_layout.addWidget(self.request_label, 3, 1)
+        status_layout.addWidget(QLabel("Completed Response"), 4, 0)
+        status_layout.addWidget(self.response_label, 4, 1)
+        status_group.setFixedHeight(236)
         right_layout.addWidget(status_group)
 
         signal_group = QGroupBox("Interface Signals")
@@ -549,15 +570,44 @@ class FSMVisualizerApp:
         right_layout.addWidget(signal_group)
 
         cache_group = QGroupBox("Cache Line")
-        cache_layout = QVBoxLayout(cache_group)
-        self.cache_line_label = QLabel("valid=False dirty=False tag=- data=0")
-        cache_layout.addWidget(self.cache_line_label)
+        cache_layout = QGridLayout(cache_group)
+        cache_layout.setHorizontalSpacing(10)
+        cache_layout.setVerticalSpacing(6)
+
+        self.cache_valid_value = QLabel("NO")
+        self.cache_valid_value.setObjectName("BoolBadgeOff")
+        self.cache_dirty_value = QLabel("NO")
+        self.cache_dirty_value.setObjectName("BoolBadgeOff")
+        self.cache_tag_value = QLabel("-")
+        self.cache_tag_value.setObjectName("DataValue")
+        self.cache_data_value = QLabel("0")
+        self.cache_data_value.setObjectName("DataValue")
+
+        cache_layout.addWidget(QLabel("Valid"), 0, 0)
+        cache_layout.addWidget(self.cache_valid_value, 0, 1)
+        cache_layout.addWidget(QLabel("Dirty"), 1, 0)
+        cache_layout.addWidget(self.cache_dirty_value, 1, 1)
+        cache_layout.addWidget(QLabel("Tag"), 2, 0)
+        cache_layout.addWidget(self.cache_tag_value, 2, 1)
+        cache_layout.addWidget(QLabel("Data"), 3, 0)
+        cache_layout.addWidget(self.cache_data_value, 3, 1)
         right_layout.addWidget(cache_group)
 
         queue_group = QGroupBox("CPU Queue")
-        queue_layout = QVBoxLayout(queue_group)
-        self.queue_label = QLabel("pending=0 active=-")
-        queue_layout.addWidget(self.queue_label)
+        queue_layout = QGridLayout(queue_group)
+        queue_layout.setHorizontalSpacing(10)
+        queue_layout.setVerticalSpacing(6)
+
+        self.queue_pending_value = QLabel("0")
+        self.queue_pending_value.setObjectName("DataValue")
+        self.queue_active_value = QLabel("-")
+        self.queue_active_value.setObjectName("StepValueDetail")
+        self.queue_active_value.setWordWrap(True)
+
+        queue_layout.addWidget(QLabel("Pending Requests"), 0, 0)
+        queue_layout.addWidget(self.queue_pending_value, 0, 1)
+        queue_layout.addWidget(QLabel("Active Request"), 1, 0)
+        queue_layout.addWidget(self.queue_active_value, 1, 1)
         right_layout.addWidget(queue_group)
 
         trace_group = QGroupBox("Cycle Trace")
@@ -639,7 +689,51 @@ class FSMVisualizerApp:
         QLabel#SignalValue {
             color: #14324a;
         }
+        QLabel#StepValueStrong {
+            color: #0f3b5c;
+            background: #e4f1fb;
+            border: 1px solid #bfd8ed;
+            border-radius: 7px;
+            padding: 2px 8px;
+            font-weight: 700;
+        }
+        QLabel#StepValueDetail {
+            color: #23465f;
+            background: #f3f9ff;
+            border: 1px solid #d8e7f5;
+            border-radius: 7px;
+            padding: 4px 8px;
+        }
+        QLabel#DataValue {
+            color: #17384f;
+            font-weight: 700;
+        }
+        QLabel#BoolBadgeOn {
+            color: #0f5132;
+            background: #d1fae5;
+            border: 1px solid #8de0bb;
+            border-radius: 7px;
+            padding: 2px 8px;
+            font-weight: 700;
+        }
+        QLabel#BoolBadgeOff {
+            color: #8a2e2e;
+            background: #fde4e4;
+            border: 1px solid #f1bbbb;
+            border-radius: 7px;
+            padding: 2px 8px;
+            font-weight: 700;
+        }
         """
+
+    @staticmethod
+    def _set_bool_badge(label: QLabel, enabled: bool) -> None:
+        label.setText("YES" if enabled else "NO")
+        label.setObjectName("BoolBadgeOn" if enabled else "BoolBadgeOff")
+        style = label.style()
+        if style is not None:
+            style.unpolish(label)
+            style.polish(label)
 
     def _on_scenario_change(self, key: str) -> None:
         self.selected_scenario = key
@@ -656,26 +750,38 @@ class FSMVisualizerApp:
         cursor.movePosition(cursor.MoveOperation.End)
         self.trace_text.setTextCursor(cursor)
 
+    @staticmethod
+    def _clip_detail(text: str, max_len: int) -> str:
+        if len(text) <= max_len:
+            return text
+        return text[: max_len - 1].rstrip() + "..."
+
     def _refresh_panels(self, trace: Optional[CycleTrace]) -> None:
         scenario = self.scenarios[self.selected_scenario]
         self.scenario_desc.setText(scenario.description)
 
         if trace is None:
             self.canvas.set_active(self.simulator.controller.state, "NONE")
-            self.cycle_label.setText(f"Cycle: {self.simulator.cycle}")
-            self.state_label.setText(f"State: {self.simulator.controller.state.value}")
-            self.transition_label.setText("Transition: -")
-            self.request_label.setText("Issued Request: -")
-            self.response_label.setText("Completed Response: -")
+            self.cycle_label.setText(str(self.simulator.cycle))
+            self.state_label.setText(self.simulator.controller.state.value)
+            self.transition_label.setText("-")
+            self.request_label.setText("-")
+            self.request_label.setToolTip("-")
+            self.response_label.setText("-")
+            self.response_label.setToolTip("-")
             for label in self.signal_labels.values():
                 label.setText("-")
         else:
             self.canvas.set_active(trace.state_after, trace.transition_key)
-            self.cycle_label.setText(f"Cycle: {trace.cycle}")
-            self.state_label.setText(f"State: {trace.state_before.value} -> {trace.state_after.value}")
-            self.transition_label.setText(f"Transition: {trace.transition_label}")
-            self.request_label.setText(f"Issued Request: {_fmt_request(trace.issued_request)}")
-            self.response_label.setText(f"Completed Response: {_fmt_response(trace.completed_response)}")
+            self.cycle_label.setText(str(trace.cycle))
+            self.state_label.setText(f"{trace.state_before.value} -> {trace.state_after.value}")
+            self.transition_label.setText(trace.transition_label)
+            req_text = _fmt_request(trace.issued_request)
+            resp_text = _fmt_response(trace.completed_response)
+            self.request_label.setText(self._clip_detail(req_text, self.DETAIL_PREVIEW_MAX))
+            self.request_label.setToolTip(req_text)
+            self.response_label.setText(self._clip_detail(resp_text, self.DETAIL_PREVIEW_MAX))
+            self.response_label.setToolTip(resp_text)
 
             self.signal_labels["cpu_req_valid"].setText(str(trace.signals.cpu_req_valid))
             self.signal_labels["cpu_waiting"].setText(str(trace.signals.cpu_waiting))
@@ -695,12 +801,13 @@ class FSMVisualizerApp:
             self._append_trace(line)
 
         line = self.simulator.controller.cache_line
-        self.cache_line_label.setText(
-            f"valid={line.valid} dirty={line.dirty} tag={_fmt_addr(line.tag)} data={line.data}"
-        )
-        self.queue_label.setText(
-            f"pending={self.simulator.cpu.queue_depth} active={_fmt_request(self.simulator.cpu.current_request)}"
-        )
+        self._set_bool_badge(self.cache_valid_value, line.valid)
+        self._set_bool_badge(self.cache_dirty_value, line.dirty)
+        self.cache_tag_value.setText(_fmt_addr(line.tag))
+        self.cache_data_value.setText(str(line.data))
+
+        self.queue_pending_value.setText(str(self.simulator.cpu.queue_depth))
+        self.queue_active_value.setText(_fmt_request(self.simulator.cpu.current_request))
 
     def reset_simulation(self) -> None:
         self.stop_run()
@@ -755,4 +862,7 @@ class FSMVisualizerApp:
 
     def run(self) -> None:
         self.window.show()
-        self.qt_app.exec()
+        app = self.qt_app
+        if app is None:
+            raise RuntimeError("QApplication is not initialized")
+        app.exec()

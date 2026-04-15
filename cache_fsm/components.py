@@ -246,6 +246,8 @@ class CacheControllerFSM:
                     self.state = ControllerState.WRITE_BACK
                     signals.mem_write = True
                     signals.mem_addr = self.cache_line.tag
+                    if self.cache_line.tag is None:
+                        raise RuntimeError("Dirty cache line must have a tag before write-back")
                     memory.start_write(self.cache_line.tag, self.cache_line.data)
                 else:
                     transition_key = "COMPARE_TO_ALLOCATE_MISS_CLEAN"
