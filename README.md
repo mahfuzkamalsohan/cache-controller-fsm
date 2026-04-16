@@ -80,6 +80,15 @@ python main.py run --scenario all_paths --output-dir outputs --max-rows 50
 - `--output-dir` - Directory to write CSV/Markdown trace files (default: `outputs`)
 - `--max-rows` - Maximum number of trace rows in markdown tables (default: `40`)
 
+## Scenarios
+
+The simulator includes four predefined scenarios:
+
+- `all_paths` - Covers the full cache controller flow, including cold miss allocate, hit read, hit write on a dirty line, dirty miss with write-back, and clean miss allocate.
+- `clean_miss_focus` - Shows a cache miss on a clean line, so the controller can evict and allocate the new block directly without write-back.
+- `dirty_miss_focus` - Shows a dirty eviction path, where a modified cache line must be written back to memory before the new block is loaded.
+- `hit_focus` - Shows repeated cache hits after one initial miss, including both read hits and write hits on the same address.
+
 ## Output
 
 When running scenarios, the simulator generates:
