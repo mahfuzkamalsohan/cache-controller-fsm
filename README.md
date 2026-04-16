@@ -110,4 +110,4 @@ See [requirements.txt](requirements.txt) for all Python dependencies.
 
 ## License
 
-[Add license information here if applicable]
+[No License]
