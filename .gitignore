@@ -37,6 +37,7 @@ htmlcov/
 
 # Editor/OS metadata
 .vscode/
+.VSCodeCounter/
 .idea/
 *.swp
 *.swo
@@ -44,4 +45,6 @@ htmlcov/
 
 # Project-generated artifacts
 outputs/
+my_traces/
+*.csv
 FSM.pdf
